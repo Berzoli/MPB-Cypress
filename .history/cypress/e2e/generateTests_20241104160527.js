@@ -17,17 +17,15 @@ fs.readFile(sitemapFilePath, 'utf8', (err, data) => {
   // Generáljuk le a tesztkódot
   let testCode = paths.map(path => `
     describe('${path.trim()}', () => {
-        it('Check 404', () => {
-          const url = 'https://postabiztosito.hu${path.trim()}';
-      
-          cy.visit(url);
-      
-          cy.get('p')
-            .contains('Úgy tűnik porszem került a gépezetbe.')
-            .should('not.exist');
+        it('should return 404 status', () => {
+          cy.request({
+            url: 'https://postabiztosito.hu${path.trim()}',
+            failOnStatusCode: false
+          }).then((response) => {
+            expect(response.status).not.to.eq(404)
+          });
         });
       });`).join('\n');
-
 
   // Írjuk ki az eredményt a generatedTests.js fájlba
   fs.writeFile(outputFilePath, testCode, 'utf8', (err) => {

@@ -17,17 +17,23 @@ fs.readFile(sitemapFilePath, 'utf8', (err, data) => {
   // Generáljuk le a tesztkódot
   let testCode = paths.map(path => `
     describe('${path.trim()}', () => {
-        it('Check 404', () => {
-          const url = 'https://postabiztosito.hu${path.trim()}';
+        it("should check for error message in div and API response", () => {
+          const fullPath = "https://postabiztosito.hu${path.trim()}";
       
-          cy.visit(url);
+          cy.intercept(
+            "GET",
+            "/cms/umbraco/customer/components/v1/generic-page?path=${path.substr(1).trim()}"
+          ).as("getGenericPage");
       
-          cy.get('p')
-            .contains('Úgy tűnik porszem került a gépezetbe.')
-            .should('not.exist');
+          cy.visit(fullPath);
+      
+          cy.wait("@getGenericPage").then((interception) => {
+            expect(interception.response.statusCode).not.to.eq(404);
+          });
         });
       });`).join('\n');
 
+    
 
   // Írjuk ki az eredményt a generatedTests.js fájlba
   fs.writeFile(outputFilePath, testCode, 'utf8', (err) => {
